@@ -1,0 +1,4 @@
+Project Name: Kareoke System
+Goal: To be used to perform a Kareoke using multiple devices and a computer as host
+users will connect to the computer with their phones using a special app, this app will communicate directly to a particular program running on the computer, this app will permit the user to use their phones as input devices to send sound into the computer. Once the program is luanched and is active, it will play a song while displaying the lyrics, user's word input will be used to match the lyric of the song playing, is it's a fail it will score a negative else otherwise.
+Requirement; For this projecct we'll have study how we can capture sound , convert it to words, the compare it with what is being played. We'll need to create a laptop program, and an android program to run on android phones.

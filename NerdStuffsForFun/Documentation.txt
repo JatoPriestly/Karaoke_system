@@ -1,0 +1,1 @@
+A simple program to search the look alike of a person from a data base of multiple pictures
