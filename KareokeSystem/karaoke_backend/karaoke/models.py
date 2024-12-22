@@ -1,17 +1,29 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 
 # user model
 class User(AbstractUser):
-    # Extend AbstractUser to include any additional fields needed
     display_name = models.CharField(max_length=100, blank=True, null=True)
     profile_picture = models.ImageField(upload_to="profile_pics/", blank=True, null=True)
+
+    # Explicitly define related_name to avoid clashes
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='karaoke_users',
+        blank=True,
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='karaoke_users',
+        blank=True,
+    )
 
     def __str__(self):
         return self.display_name or self.username
     
-
+    
 # Song model
 class Song(models.Model):
     title = models.CharField(max_length=200)
