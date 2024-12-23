@@ -1,133 +1,148 @@
-from rest_framework.viewsets import ModelViewSet
+from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import status
-from django.contrib.auth import get_user_model
-from .models import Song, DuetSession, FavoriteSongs, Performance
+from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
+from .models import User, Song, DuetSession, FavoriteSongs, Performance
 from .serializers import (
-    UserSerializer, SongSerializer, DuetSessionSerializer,
-    FavoriteSongsSerializer, PerformanceSerializer
+    UserSerializer,
+    SongSerializer,
+    DuetSessionSerializer,
+    FavoriteSongsSerializer,
+    PerformanceSerializer
 )
-
-User = get_user_model()
+from django.contrib.auth import authenticate, login, logout
+from rest_framework_simplejwt.tokens import RefreshToken
+from .permissions import IsOwnerOrReadOnly
 
 # User ViewSet
-class UserViewSet(ModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
 # Song ViewSet
-class SongViewSet(ModelViewSet):
+class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
 # DuetSession ViewSet
-class DuetSessionViewSet(ModelViewSet):
+class DuetSessionViewSet(viewsets.ModelViewSet):
     queryset = DuetSession.objects.all()
     serializer_class = DuetSessionSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        serializer.save()
+
 # FavoriteSongs ViewSet
-class FavoriteSongsViewSet(ModelViewSet):
+class FavoriteSongsViewSet(viewsets.ModelViewSet):
     queryset = FavoriteSongs.objects.all()
     serializer_class = FavoriteSongsSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 # Performance ViewSet
-class PerformanceViewSet(ModelViewSet):
+class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = Performance.objects.all()
     serializer_class = PerformanceSerializer
     permission_classes = [IsAuthenticated]
 
-# External API Search View
-class ExternalAPISearchView(APIView):
-    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
 
-    def get(self, request):
-        # Example placeholder implementation
-        return Response({"message": "Search external APIs here."}, status=status.HTTP_200_OK)
-
-# External API Sync View
-class ExternalAPISyncView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        # Example placeholder implementation
-        return Response({"message": "Sync external APIs here."}, status=status.HTTP_200_OK)
-
-# Lyrics View
-class LyricsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id):
-        # Example placeholder implementation
-        return Response({"lyrics": f"Lyrics for song with id {id}."}, status=status.HTTP_200_OK)
-
-# Real-Time Duet View
-class RealTimeDuetView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id):
-        # Example placeholder implementation
-        return Response({"message": f"Real-time duet for session {id}."}, status=status.HTTP_200_OK)
-
-# Status View
-class StatusView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        return Response({"status": "Server is running."}, status=status.HTTP_200_OK)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 # Register User View
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        data = request.data
-        username = data.get('username')
-        password = data.get('password')
-        email = data.get('email')
-
-        if not username or not password:
-            return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if User.objects.filter(username=username).exists():
-            return Response({"error": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
-
-        user = User.objects.create_user(username=username, password=password, email=email)
-        user.save()
-
-        return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Logout View
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        request.auth.delete()
-        return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+        try:
+            refresh_token = request.data.get("refresh")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            logout(request)
+            return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # User Profile View
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
-        try:
-            user = User.objects.get(id=id)
-            serializer = UserSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        user = get_object_or_404(User, id=id)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
-    def put(self, request, id):
-        try:
-            user = User.objects.get(id=id)
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+# External API Search View
+class ExternalAPISearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Example placeholder logic for external API search
+        query = request.query_params.get("q", "")
+        if query:
+            return Response({"results": [f"Found {query}."]})
+        return Response({"results": []})
+
+# External API Sync View
+class ExternalAPISyncView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Example placeholder logic for syncing
+        return Response({"detail": "External data synced successfully."})
+
+# Lyrics View
+class LyricsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        song = get_object_or_404(Song, id=id)
+        return Response({"lyrics": f"Lyrics for {song.title} by {song.artist}."})
+
+# Real-Time Duet View
+class RealTimeDuetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        session = get_object_or_404(DuetSession, id=id)
+        if session.is_active:
+            return Response({"detail": "Duet session is active.", "participants": session.participants.values_list("username", flat=True)})
+        return Response({"detail": "Duet session is not active."})
+
+# Status View
+class StatusView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"status": "API is running smoothly."})
