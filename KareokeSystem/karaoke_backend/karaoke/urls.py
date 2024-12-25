@@ -1,9 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework.schemas import get_schema_view
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
 from .views import (
     UserViewSet,
     SongViewSet,
@@ -18,16 +15,6 @@ from .views import (
     RegisterUserView,
     LogoutView,
     UserProfileView,
-)
-
-# Schema view developemnt
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Karaoke API",
-        default_version="v1",
-        description="API documentation for the karaoke application",
-    ),
-    public= True,
 )
 
 # Create a router and register viewsets
@@ -61,6 +48,4 @@ urlpatterns = [
     path('realtime/duets/<int:id>/', RealTimeDuetView.as_view(), name='realtime_duet'),
     path('status/', StatusView.as_view(), name='status'),
 
-    # API documentation 
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 ]

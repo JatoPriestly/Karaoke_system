@@ -23,7 +23,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.display_name or self.username
     
-    
+
 # Song model
 class Song(models.Model):
     title = models.CharField(max_length=200)
@@ -48,9 +48,25 @@ class DuetSession(models.Model):
     def __str__(self):
         return f"{self.host} duet on {self.song.title}"
 
+# Performance model
+class Performance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='performances')
+    song = models.ForeignKey('Song', on_delete=models.CASCADE, related_name='performances')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    score = models.IntegerField(null=True, blank=True)
+    recording = models.FileField(upload_to='recordings/', null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username}'s performance of {self.song.title} on {self.timestamp.strftime('%Y-%m-%d')}"
+
+
+
 # Additional relations (if needed in the future)
 # 1. User favorite songs
-class FavoriteSong(models.Model):
+class FavoriteSongs(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_songs")
     song = models.ForeignKey(Song, on_delete=models.CASCADE)
     added_on = models.DateTimeField(auto_now_add=True)
@@ -67,3 +83,5 @@ class DuetHistory(models.Model):
 
     def __str__(self):
         return f"{self.user} in {self.session}"
+
+
