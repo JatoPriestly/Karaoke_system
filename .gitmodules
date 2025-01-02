@@ -1,0 +1,3 @@
+[submodule "KareokeSystem/KaraokeFrontEnd"]
+	path = KareokeSystem/KaraokeFrontEnd
+	url = https://github.com/JatoPriestly/Karaoke-app-design-frontEnd.git

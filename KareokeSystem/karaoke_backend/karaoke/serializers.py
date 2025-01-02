@@ -130,14 +130,24 @@
 #         ]
 from rest_framework import serializers
 from .models import User, Song, DuetSession, Performance, FavoriteSongs, DuetHistory
+from django.contrib.auth.models import Group, Permission  # Add this import
+from django.contrib.auth import get_user_model
 
-# User Serializer
+User = get_user_model()
+
+
+
+
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.groups.related.model.objects.all(), required=False
+        many=True, 
+        queryset=Group.objects.all(),
+        required=False
     )
     user_permissions = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.user_permissions.related.model.objects.all(), required=False
+        many=True, 
+        queryset=Permission.objects.all(),
+        required=False
     )
 
     class Meta:
@@ -170,8 +180,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.groups.set(groups_data)
         instance.user_permissions.set(user_permissions_data)
         return instance
-
-
+    
 # Song Serializer
 class SongSerializer(serializers.ModelSerializer):
     class Meta:
