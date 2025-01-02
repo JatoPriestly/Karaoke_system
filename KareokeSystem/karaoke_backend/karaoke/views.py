@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, AllowAny
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from .models import User, Song, DuetSession, FavoriteSongs, Performance
@@ -20,9 +20,9 @@ from .permissions import IsOwnerOrReadOnly
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
@@ -31,7 +31,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
@@ -40,7 +40,7 @@ class SongViewSet(viewsets.ModelViewSet):
 class DuetSessionViewSet(viewsets.ModelViewSet):
     queryset = DuetSession.objects.all()
     serializer_class = DuetSessionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
         serializer.save()
@@ -49,7 +49,7 @@ class DuetSessionViewSet(viewsets.ModelViewSet):
 class FavoriteSongsViewSet(viewsets.ModelViewSet):
     queryset = FavoriteSongs.objects.all()
     serializer_class = FavoriteSongsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
@@ -61,7 +61,7 @@ class FavoriteSongsViewSet(viewsets.ModelViewSet):
 class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = Performance.objects.all()
     serializer_class = PerformanceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
@@ -82,7 +82,7 @@ class RegisterUserView(APIView):
 
 # Logout View
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         try:
@@ -96,7 +96,7 @@ class LogoutView(APIView):
 
 # User Profile View
 class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, id):
         user = get_object_or_404(User, id=id)
@@ -105,7 +105,7 @@ class UserProfileView(APIView):
 
 # External API Search View
 class ExternalAPISearchView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         # Example placeholder logic for external API search
@@ -116,7 +116,7 @@ class ExternalAPISearchView(APIView):
 
 # External API Sync View
 class ExternalAPISyncView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         # Example placeholder logic for syncing
@@ -124,7 +124,7 @@ class ExternalAPISyncView(APIView):
 
 # Lyrics View
 class LyricsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, id):
         song = get_object_or_404(Song, id=id)
@@ -132,7 +132,7 @@ class LyricsView(APIView):
 
 # Real-Time Duet View
 class RealTimeDuetView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, id):
         session = get_object_or_404(DuetSession, id=id)
